@@ -1,0 +1,24 @@
+# ════════════════════════════════════════════════════════
+#  FICHIERS À NE PAS ENVOYER SUR GITHUB
+# ════════════════════════════════════════════════════════
+
+# 🔐 Ne JAMAIS envoyer ta clé API !
+.env
+
+# 📄 Rapports générés (on garde le dossier mais pas son contenu)
+output/*
+!output/.gitkeep
+
+# 🗑️ Fichiers temporaires et sauvegardes
+*.tmp
+*.bak
+*~
+*.swp
+.DS_Store
+
+# 📁 Dossiers de cache et fichiers générés
+.cache/
+__pycache__/
+*.pyc
+.venv/
+venv/
