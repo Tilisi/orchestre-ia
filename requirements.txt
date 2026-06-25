@@ -1,0 +1,14 @@
+# ════════════════════════════════════════════════════════
+#  DÉPENDANCES PYTHON DE L'ORCHESTRE V2
+# ════════════════════════════════════════════════════════
+#  Installation :  pip install -r requirements.txt
+# ════════════════════════════════════════════════════════
+
+# Pour appeler les API (Groq, Gemini, OpenRouter) et faire du scraping web
+requests>=2.31.0
+
+# Pour analyser les pages HTML lors de la recherche web
+beautifulsoup4>=4.12.0
+
+# Pour le bot Telegram (pilotage depuis ton téléphone)
+pyTelegramBotAPI>=4.15.0
