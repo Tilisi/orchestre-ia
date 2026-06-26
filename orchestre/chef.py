@@ -18,7 +18,7 @@ Pipelines selon le type de tâche :
 import os
 import datetime
 
-from orchestre import routeur, chercheur, analyseur, redacteur, codeur, data_agent
+from orchestre import routeur, chercheur, analyseur, redacteur, codeur, data_agent, critique
 from orchestre.log import titre, ok, separateur, info, erreur
 
 
@@ -27,20 +27,23 @@ def _pipeline_recherche(tache):
     donnees = chercheur.chercher(tache)
     analyse = analyseur.analyser(donnees)
     rapport = redacteur.rediger(analyse, tache)
+    rapport = critique.critiquer(rapport, tache)  # 🔬 6e agent
     return rapport
 
 
 def _pipeline_data(tache):
     """Pipeline pour une analyse de données."""
     analyse = data_agent.analyser(tache)
-    # On fait rédiger un rapport clair par le rédacteur
     rapport = redacteur.rediger(analyse, "Analyse de données")
+    rapport = critique.critiquer(rapport, "Analyse de données")  # 🔬
     return rapport
 
 
 def _pipeline_contenu(tache):
     """Pipeline pour la création de contenu."""
-    return redacteur.rediger(tache, tache)
+    rapport = redacteur.rediger(tache, tache)
+    rapport = critique.critiquer(rapport, tache)  # 🔬
+    return rapport
 
 
 def _pipeline_code(tache):
