@@ -23,8 +23,10 @@ Règles :
 - Structure ta réponse avec des titres (##)."""
 
 _HEADERS = {
-    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                   "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+    )
 }
 
 
@@ -45,7 +47,7 @@ def chercher_web(requete, max_extraits=5):
 
     soupe = BeautifulSoup(reponse.text, "html.parser")
     liens = []
-    
+
     # Extraire les URL réelles des résultats
     for a in soupe.find_all("a", class_="result__url"):
         href = a.get("href", "")
@@ -57,10 +59,10 @@ def chercher_web(requete, max_extraits=5):
         attention("Aucun lien exploitable trouvé. Extraction de fallback.")
         texte = soupe.get_text(separator="\n")
         return texte[:2000]
-        
+
     ok(f"{len(liens)} liens web trouvés. Scraping des 2 premiers...")
     textes_scrapes = []
-    
+
     # Scraper les 2 premières URLs
     for lien in liens[:2]:
         try:
@@ -72,9 +74,13 @@ def chercher_web(requete, max_extraits=5):
                     elem.extract()
                 texte_propre = s.get_text(separator="\n")
                 # Nettoyer les espaces multiples
-                lignes = [ligne.strip() for ligne in texte_propre.splitlines() if ligne.strip()]
+                lignes = [
+                    ligne.strip()
+                    for ligne in texte_propre.splitlines()
+                    if ligne.strip()
+                ]
                 texte_final = "\n".join(lignes)
-                
+
                 # Garder 3000 caractères par page pour éviter la saturation du contexte
                 textes_scrapes.append(f"--- SOURCE : {lien} ---\n{texte_final[:3000]}")
         except Exception as e:

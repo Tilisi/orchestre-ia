@@ -29,7 +29,9 @@ def health():
 def demarrer_keepalive(port=10000):
     """Lance le serveur keep-alive dans un thread daemon."""
     serveur = threading.Thread(
-        target=lambda: app.run(host="0.0.0.0", port=port, debug=False, use_reloader=False),
+        target=lambda: app.run(
+            host="0.0.0.0", port=port, debug=False, use_reloader=False  # nosec B104
+        ),
         daemon=True,
     )
     serveur.start()

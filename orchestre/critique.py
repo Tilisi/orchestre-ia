@@ -22,6 +22,7 @@ Ton retour doit être sous la forme :
 - La transition Y est abrupte...
 """
 
+
 def critiquer(rapport, sujet):
     """
     Lit le rapport et fournit une liste de retours critiques (feedback).

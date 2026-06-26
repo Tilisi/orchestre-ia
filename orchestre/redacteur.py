@@ -54,6 +54,7 @@ N'utilise PAS de délimiteur de code (``` ) au début ou à la fin."""
     ok(f"Rapport initial rédigé — {nb_mots} mots.")
     return resultat
 
+
 def corriger(rapport, feedback):
     """
     Applique les corrections demandées par le critique.

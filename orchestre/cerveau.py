@@ -29,6 +29,7 @@ _TIMEOUT = 45
 #  LES TROIS FOURNISSEURS
 # ════════════════════════════════════════════════════════
 
+
 def _groq(systeme, utilisateur, temperature):
     """Appel à l'API Groq (compatible OpenAI)."""
     url = "https://api.groq.com/openai/v1/chat/completions"
@@ -51,31 +52,37 @@ def _gemini(systeme, utilisateur, temperature):
     """Appel à l'API Google Gemini (format propre à Google)."""
     cle = os.getenv("GEMINI_API_KEY")
     modele = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
-    url = (f"https://generativelanguage.googleapis.com/v1beta/"
-           f"models/{modele}:generateContent?key={cle}")
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/"
+        f"models/{modele}:generateContent?key={cle}"
+    )
     payload = {
         "system_instruction": {"parts": [{"text": systeme}]},
         "contents": [{"role": "user", "parts": [{"text": utilisateur}]}],
         "generationConfig": {"temperature": temperature},
     }
     reponse = requests.post(
-        url, json=payload, timeout=_TIMEOUT,
+        url,
+        json=payload,
+        timeout=_TIMEOUT,
         headers={"Content-Type": "application/json"},
     )
     reponse.raise_for_status()
     data = reponse.json()
-    
+
     if "candidates" not in data or not data["candidates"]:
         # Gemini Safety Filter block or generic error
         prompt_feedback = data.get("promptFeedback", {})
         if prompt_feedback.get("blockReason"):
-            raise RuntimeError(f"Censuré par Gemini (Safety Filter) : {prompt_feedback['blockReason']}")
+            raise RuntimeError(
+                f"Censuré par Gemini (Safety Filter) : {prompt_feedback['blockReason']}"
+            )
         raise RuntimeError(f"Réponse Gemini inattendue : {data}")
-        
+
     candidat = data["candidates"][0]
     if candidat.get("finishReason") == "SAFETY":
         raise RuntimeError("Gemini a bloqué la réponse en cours (Safety Filter).")
-        
+
     try:
         return candidat["content"]["parts"][0]["text"]
     except KeyError:
@@ -118,6 +125,7 @@ def _openai_compat(url, headers, payload):
 #  LISTE DES FOURNISSEURS DISPONIBLES (selon les clés présentes)
 # ════════════════════════════════════════════════════════
 
+
 def _fournisseurs():
     """
     Renvoie la liste des fournisseurs actifs, dans l'ordre de priorité.
@@ -136,6 +144,7 @@ def _fournisseurs():
 # ════════════════════════════════════════════════════════
 #  FONCTION PRINCIPALE — utilisée par TOUS les agents
 # ════════════════════════════════════════════════════════
+
 
 def appeler_llm(systeme, utilisateur, temperature=0.7):
     """

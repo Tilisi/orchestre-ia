@@ -18,6 +18,7 @@ import os
 import argparse
 from dotenv import load_dotenv
 
+
 def _charger_env():
     """Charge le fichier .env proprement."""
     chemin_env = os.path.join(os.getcwd(), ".env")
@@ -29,6 +30,7 @@ def _charger_env():
 # (avec python-dotenv si dispo, sinon manuellement)
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     _charger_env()
@@ -41,22 +43,29 @@ def main():
         description="🎼 Orchestre d'agents IA multi-usages",
     )
     parseur.add_argument(
-        "tache", nargs="*", help="La tâche à accomplir (texte libre)",
+        "tache",
+        nargs="*",
+        help="La tâche à accomplir (texte libre)",
     )
     parseur.add_argument(
-        "-s", "--sujet", help="La tâche (alternative à l'argument positionnel)",
+        "-s",
+        "--sujet",
+        help="La tâche (alternative à l'argument positionnel)",
     )
     parseur.add_argument(
-        "-f", "--fichier",
+        "-f",
+        "--fichier",
         help="Lire la tâche depuis un fichier (ex: données.csv)",
     )
     parseur.add_argument(
-        "-t", "--type",
+        "-t",
+        "--type",
         choices=["recherche", "code", "data", "contenu"],
         help="Forcer le type de tâche (ignore le routeur)",
     )
     parseur.add_argument(
-        "--sans-sauvegarde", action="store_true",
+        "--sans-sauvegarde",
+        action="store_true",
         help="Ne pas sauvegarder le résultat dans output/",
     )
 
@@ -79,8 +88,8 @@ def main():
     if not tache:
         parseur.print_help()
         print("\nExemples :")
-        print('  python3 -m orchestre "Analyse l\'impact de l\'IA sur la santé"')
-        print('  python3 -m orchestre --fichier ventes.csv --type data')
+        print("  python3 -m orchestre \"Analyse l'impact de l'IA sur la santé\"")
+        print("  python3 -m orchestre --fichier ventes.csv --type data")
         print('  python3 -m orchestre "Écris un script Python pour trier une liste"')
         sys.exit(1)
 
@@ -96,6 +105,7 @@ def main():
     # --- Forcer le type si demandé ---
     if args.type:
         import orchestre.routeur as routeur
+
         # Contournement : on simule la classification du routeur
         info(f"Type forcé par l'utilisateur : {args.type.upper()}")
         # On monkey-patch la fonction router pour qu'elle renvoie le type forcé

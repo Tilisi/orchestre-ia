@@ -46,10 +46,12 @@ if _PROJET not in sys.path:
 import os
 from dotenv import load_dotenv
 
+
 def _charger_env(chemin):
     """Charge le fichier .env proprement via python-dotenv."""
     if os.path.exists(chemin):
         load_dotenv(chemin)
+
 
 _charger_env(os.path.join(_PROJET, ".env"))
 
@@ -78,6 +80,7 @@ bot = telebot.TeleBot(TOKEN)
 #  UTILITAIRES
 # ════════════════════════════════════════════════════════
 
+
 def _autorise(message):
     """Vérifie que l'utilisateur est autorisé (sécurité)."""
     if not CHAT_ID_AUTORISE:
@@ -92,7 +95,7 @@ def _envoyer(chat_id, texte):
     if len(texte) <= limite:
         bot.send_message(chat_id, texte)
         return
-    morceaux = [texte[i:i + limite] for i in range(0, len(texte), limite)]
+    morceaux = [texte[i : i + limite] for i in range(0, len(texte), limite)]
     total = len(morceaux)
     for i, morceau in enumerate(morceaux, start=1):
         bot.send_message(chat_id, "(part {}/{})\n\n{}".format(i, total, morceau))
@@ -107,10 +110,14 @@ def _declencher_github(sujet):
     token = os.getenv("GITHUB_TOKEN")
     repo = os.getenv("GITHUB_REPO")
     if not token or not repo:
-        return False, ("Mode cloud : GITHUB_TOKEN et GITHUB_REPO requis dans .env. "
-                       "Sinon, passe en mode local (BOT_MODE=local).")
+        return False, (
+            "Mode cloud : GITHUB_TOKEN et GITHUB_REPO requis dans .env. "
+            "Sinon, passe en mode local (BOT_MODE=local)."
+        )
 
-    url = "https://api.github.com/repos/{}/actions/workflows/orchestre.yml/dispatches".format(repo)
+    url = "https://api.github.com/repos/{}/actions/workflows/orchestre.yml/dispatches".format(
+        repo
+    )
     headers = {
         "Authorization": "Bearer {}".format(token),
         "Accept": "application/vnd.github+json",
@@ -123,10 +130,14 @@ def _declencher_github(sujet):
     try:
         resp = requests.post(url, headers=headers, json=payload, timeout=15)
         if resp.status_code == 204:
-            return True, ("🚀 Tâche lancée sur GitHub Actions !\n\n"
-                          "Le serveur gratuit traite ta demande.\n"
-                          "Le rapport arrive ici dans ~1-2 min. ⏳")
-        return False, "❌ GitHub a renvoyé {} : {}".format(resp.status_code, resp.text[:200])
+            return True, (
+                "🚀 Tâche lancée sur GitHub Actions !\n\n"
+                "Le serveur gratuit traite ta demande.\n"
+                "Le rapport arrive ici dans ~1-2 min. ⏳"
+            )
+        return False, "❌ GitHub a renvoyé {} : {}".format(
+            resp.status_code, resp.text[:200]
+        )
     except Exception as e:
         return False, "❌ Impossible de déclencher GitHub : {}".format(e)
 
@@ -135,6 +146,7 @@ def _executer_local(sujet):
     """Exécute l'orchestre localement et renvoie le résultat."""
     try:
         from orchestre import chef
+
         resultat = chef.executer(sujet)
         chef.sauvegarder(resultat, sujet)
         return True, resultat
@@ -145,6 +157,7 @@ def _executer_local(sujet):
 # ════════════════════════════════════════════════════════
 #  COMMANDES DU BOT
 # ════════════════════════════════════════════════════════
+
 
 @bot.message_handler(commands=["start", "aide", "help"])
 def cmd_aide(message):
@@ -170,11 +183,15 @@ def cmd_aide(message):
 def cmd_mode(message):
     if not _autorise(message):
         return
-    bot.reply_to(message, "⚙️ Mode actuel : {}\n"
-                          "Change-le via BOT_MODE dans .env (cloud ou local)".format(MODE))
+    bot.reply_to(
+        message,
+        "⚙️ Mode actuel : {}\n"
+        "Change-le via BOT_MODE dans .env (cloud ou local)".format(MODE),
+    )
 
 
 import threading
+
 
 @bot.message_handler(func=lambda m: True)
 def traiter_tache(message):
@@ -190,12 +207,18 @@ def traiter_tache(message):
     info("Tâche reçue de {} : {}...".format(message.chat.id, sujet[:60]))
 
     if MODE == "cloud":
-        bot.reply_to(message, "🔄 Je traite dans le cloud : « {}... »\nMode : {}".format(sujet[:60], MODE))
+        bot.reply_to(
+            message,
+            "🔄 Je traite dans le cloud : « {}... »\nMode : {}".format(
+                sujet[:60], MODE
+            ),
+        )
         succes, reponse = _declencher_github(sujet)
         _envoyer(message.chat.id, reponse)
         if succes:
             ok("Tâche traitée avec succès.")
     else:
+
         def _thread_local(chat_id, task_sujet):
             try:
                 succes, reponse = _executer_local(task_sujet)
@@ -205,8 +228,15 @@ def traiter_tache(message):
             except Exception as e:
                 _envoyer(chat_id, f"❌ Erreur lors du thread local : {e}")
 
-        bot.reply_to(message, "🔄 Je traite en local (thread asynchrone) : « {}... »\nMode : {}".format(sujet[:60], MODE))
-        threading.Thread(target=_thread_local, args=(message.chat.id, sujet), daemon=True).start()
+        bot.reply_to(
+            message,
+            "🔄 Je traite en local (thread asynchrone) : « {}... »\nMode : {}".format(
+                sujet[:60], MODE
+            ),
+        )
+        threading.Thread(
+            target=_thread_local, args=(message.chat.id, sujet), daemon=True
+        ).start()
 
 
 # ════════════════════════════════════════════════════════

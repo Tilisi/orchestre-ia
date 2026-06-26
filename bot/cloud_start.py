@@ -65,6 +65,7 @@ ok(f"Serveur keep-alive démarré sur le port {PORT}")
 #  COMMANDES DU BOT
 # ════════════════════════════════════════════════════════
 
+
 def _autorise(message):
     if not CHAT_ID_AUTORISE:
         return True
@@ -77,7 +78,7 @@ def _envoyer(chat_id, texte):
     if len(texte) <= limite:
         bot.send_message(chat_id, texte)
         return
-    morceaux = [texte[i:i + limite] for i in range(0, len(texte), limite)]
+    morceaux = [texte[i : i + limite] for i in range(0, len(texte), limite)]
     total = len(morceaux)
     for i, m in enumerate(morceaux, start=1):
         bot.send_message(chat_id, "(part {}/{})\n\n{}".format(i, total, m))
@@ -87,6 +88,7 @@ def _executer_orchestre(sujet):
     """Exécute l'orchestre directement sur le serveur cloud."""
     try:
         from orchestre import chef
+
         resultat = chef.executer(sujet)
         chef.sauvegarder(resultat, sujet)
         return True, resultat
@@ -116,10 +118,15 @@ def cmd_status(message):
     if not _autorise(message):
         return
     nb_fournisseurs = 0
-    if os.getenv("GROQ_API_KEY"): nb_fournisseurs += 1
-    if os.getenv("GEMINI_API_KEY"): nb_fournisseurs += 1
-    if os.getenv("OPENROUTER_API_KEY"): nb_fournisseurs += 1
-    bot.reply_to(message, "🎼 Bot en ligne.\nCerveaux disponibles : {}".format(nb_fournisseurs))
+    if os.getenv("GROQ_API_KEY"):
+        nb_fournisseurs += 1
+    if os.getenv("GEMINI_API_KEY"):
+        nb_fournisseurs += 1
+    if os.getenv("OPENROUTER_API_KEY"):
+        nb_fournisseurs += 1
+    bot.reply_to(
+        message, "🎼 Bot en ligne.\nCerveaux disponibles : {}".format(nb_fournisseurs)
+    )
 
 
 @bot.message_handler(func=lambda m: True)
@@ -134,7 +141,10 @@ def traiter_tache(message):
         return
 
     info("Tache recue de {} : {}...".format(message.chat.id, sujet[:60]))
-    bot.reply_to(message, "🔄 Je traite : « {}... »\nLes agents travaillent...".format(sujet[:60]))
+    bot.reply_to(
+        message,
+        "🔄 Je traite : « {}... »\nLes agents travaillent...".format(sujet[:60]),
+    )
 
     succes, reponse = _executer_orchestre(sujet)
     _envoyer(message.chat.id, reponse)

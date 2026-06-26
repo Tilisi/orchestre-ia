@@ -30,13 +30,45 @@ pas de ponctuation, juste le mot."""
 
 # Mots-clés pour un pré-filtre rapide (évite un appel API si évident)
 _MOTS_CLES = {
-    "code": ["code", "script", "fonction", "bug", "python", "bash", "javascript",
-             "html", "css", "java", "programme", "compiler", "erreur code",
-             "algorithme", "regex"],
-    "data": ["csv", "données", "statistique", "moyenne", "médiane",
-             "analyse de données", "tableau", "chiffres", "excel"],
-    "contenu": ["article", "post", "email", "rédige", "écris un texte",
-                "newsletter", "slogan", "bio", "description produit"],
+    "code": [
+        "code",
+        "script",
+        "fonction",
+        "bug",
+        "python",
+        "bash",
+        "javascript",
+        "html",
+        "css",
+        "java",
+        "programme",
+        "compiler",
+        "erreur code",
+        "algorithme",
+        "regex",
+    ],
+    "data": [
+        "csv",
+        "données",
+        "statistique",
+        "moyenne",
+        "médiane",
+        "analyse de données",
+        "tableau",
+        "chiffres",
+        "excel",
+    ],
+    "contenu": [
+        "article",
+        "post",
+        "email",
+        "rédige",
+        "écris un texte",
+        "newsletter",
+        "slogan",
+        "bio",
+        "description produit",
+    ],
 }
 
 
