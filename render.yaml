@@ -1,0 +1,25 @@
+# ════════════════════════════════════════════════════════
+#  CONFIGURATION RENDER — Déploiement automatique du bot
+# ════════════════════════════════════════════════════════
+#  Ce fichier dit à Render comment déployer ton bot.
+#  Tu peux aussi tout configurer via l'interface web.
+# ════════════════════════════════════════════════════════
+
+services:
+  - type: web
+    name: orchestre-ia-bot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements-cloud.txt
+    startCommand: python3 bot/cloud_start.py
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_CHAT_ID
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: PYTHON_VERSION
+        value: "3.11.0"
