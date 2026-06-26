@@ -1,0 +1,17 @@
+# ════════════════════════════════════════════════════════
+#  DÉPENDANCES POUR LE BOT CLOUD 24/7
+# ════════════════════════════════════════════════════════
+#  (fichier requirements-cloud.txt utilisé par Render/Koyeb)
+# ════════════════════════════════════════════════════════
+
+# Le cerveau de l'orchestre
+requests>=2.31.0
+
+# Scraping web
+beautifulsoup4>=4.12.0
+
+# Bot Telegram
+pyTelegramBotAPI>=4.15.0
+
+# Petit serveur web keep-alive (empêche Render d'endormir le bot)
+flask>=3.0.0
