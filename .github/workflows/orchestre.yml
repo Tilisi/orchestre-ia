@@ -1,0 +1,78 @@
+name: 🎼 Orchestre IA
+
+on:
+  workflow_dispatch:
+    inputs:
+      sujet:
+        description: "La tâche / le sujet à traiter"
+        required: true
+        default: "L'impact de l'IA sur la santé en 2026"
+      type:
+        description: "Type de tâche (auto = détection intelligente)"
+        type: choice
+        options:
+          - auto
+          - recherche
+          - code
+          - data
+          - contenu
+        default: auto
+
+jobs:
+  orchestre:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Installer les dépendances
+        run: pip install -r requirements.txt
+
+      - name: Exécuter l'orchestre
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+        run: |
+          SUJET="${{ github.event.inputs.sujet }}"
+          TYPE="${{ github.event.inputs.type }}"
+          ARGS=""
+          if [ "$TYPE" != "auto" ] && [ -n "$TYPE" ]; then
+            ARGS="--type $TYPE"
+          fi
+          echo "Tâche : $SUJET"
+          python3 -m orchestre --sans-sauvegarde --sujet "$SUJET" $ARGS > resultat.md
+          echo "Rapport généré ($(wc -w < resultat.md) mots)"
+
+      - name: Envoyer le rapport sur Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SUJET: ${{ github.event.inputs.sujet }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
+            echo "Pas de token Telegram : le rapport reste dans les logs."
+            echo "--- DEBUT DU RAPPORT ---"
+            cat resultat.md
+            echo "--- FIN DU RAPPORT ---"
+            exit 0
+          fi
+          echo "Envoi du rapport sur Telegram..."
+          curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendDocument" \
+            -F "chat_id=${TELEGRAM_CHAT_ID}" \
+            -F "document=@resultat.md" \
+            -F "caption=🎼 Rapport généré pour : ${SUJET}" \
+            > /dev/null
+          echo "Rapport envoyé sur Telegram !"
+
+      - name: Archiver le rapport
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapport-orchestre
+          path: resultat.md
+          retention-days: 30
