@@ -12,3 +12,4 @@ beautifulsoup4>=4.12.0
 
 # Pour le bot Telegram (pilotage depuis ton téléphone)
 pyTelegramBotAPI>=4.15.0
+python-dotenv

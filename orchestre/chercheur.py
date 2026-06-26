@@ -1,10 +1,8 @@
 """
-🔍 AGENT CHERCHEUR  (avec scraping web réel)
+🔍 AGENT CHERCHEUR  (avec vrai scraping web)
 ============================================
 Explore un sujet, récupère du vrai contenu sur le web via
-DuckDuckGo, puis synthétise le tout avec le cerveau IA.
-
-C'est le 1er violon de l'orchestre.
+DuckDuckGo, scrape réellement les pages trouvées, puis synthétise le tout avec le cerveau IA.
 """
 
 import requests
@@ -24,109 +22,85 @@ Règles :
 - Donne des chiffres, des dates, des exemples concrets.
 - Structure ta réponse avec des titres (##)."""
 
-# --- Entête pour se faire passer pour un navigateur ---
-# (sinon certains sites refusent les requêtes de scripts)
 _HEADERS = {
-    "User-Agent": ("Mozilla/5.0 (Linux; Android 14; Redmi 14) "
-                   "AppleWebKit/537.36 Mobile Safari/537.36")
+    "User-Agent": ("Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                   "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
 }
 
 
 def chercher_web(requete, max_extraits=5):
     """
-    Effectue une recherche web sur DuckDuckGo et renvoie du texte exploitable.
-
-    Arguments :
-        requete      : la recherche à effectuer
-        max_extraits : nombre maximum de résultats à garder
-
-    Renvoie : une chaîne de texte (les extraits concaténés),
-              ou une chaîne vide si rien trouvé.
+    Effectue une recherche web sur DuckDuckGo, extrait les vrais liens,
+    et scrape le contenu de ces pages.
     """
     info(f"Recherche web : « {requete} »")
     try:
-        url = "https://lite.duckduckgo.com/lite/"
+        url = "https://html.duckduckgo.com/html/"
         params = {"q": requete, "kl": "fr-fr"}
-        reponse = requests.get(url, params=params, headers=_HEADERS, timeout=15)
+        reponse = requests.post(url, data=params, headers=_HEADERS, timeout=15)
         reponse.raise_for_status()
     except Exception as e:
-        attention(f"Recherche web impossible ({e}). On continue sans web.")
+        attention(f"Recherche web (DuckDuckGo) impossible ({e}). On continue sans web.")
         return ""
 
-    # Extraire le texte propre avec BeautifulSoup
     soupe = BeautifulSoup(reponse.text, "html.parser")
-    texte = soupe.get_text(separator="\n")
+    liens = []
+    
+    # Extraire les URL réelles des résultats
+    for a in soupe.find_all("a", class_="result__url"):
+        href = a.get("href", "")
+        if href.startswith("http") and "duckduckgo" not in href:
+            if href not in liens:
+                liens.append(href)
 
-    # Nettoyer : enlever les lignes vides et le bruit, garder les meilleures
-    lignes = []
-    for ligne in texte.splitlines():
-        ligne = ligne.strip()
-        if len(ligne) < 30:  # trop court = probablement du bruit
+    if not liens:
+        attention("Aucun lien exploitable trouvé. Extraction de fallback.")
+        texte = soupe.get_text(separator="\n")
+        return texte[:2000]
+        
+    ok(f"{len(liens)} liens web trouvés. Scraping des 2 premiers...")
+    textes_scrapes = []
+    
+    # Scraper les 2 premières URLs
+    for lien in liens[:2]:
+        try:
+            r = requests.get(lien, headers=_HEADERS, timeout=10)
+            if r.status_code == 200:
+                s = BeautifulSoup(r.text, "html.parser")
+                # Supprimer les balises inutiles
+                for elem in s(["script", "style", "nav", "footer", "header"]):
+                    elem.extract()
+                texte_propre = s.get_text(separator="\n")
+                # Nettoyer les espaces multiples
+                lignes = [ligne.strip() for ligne in texte_propre.splitlines() if ligne.strip()]
+                texte_final = "\n".join(lignes)
+                
+                # Garder 3000 caractères par page pour éviter la saturation du contexte
+                textes_scrapes.append(f"--- SOURCE : {lien} ---\n{texte_final[:3000]}")
+        except Exception as e:
+            attention(f"Impossible de lire {lien} ({e})")
             continue
-        if any(mot in ligne.lower() for mot in (
-            "duckduckgo", "privacy", "newsletter", "javascript",
-            "cookie", "about", "settings",
-        )):
-            continue
-        lignes.append(ligne)
-        if len(lignes) >= max_extraits:
-            break
 
-    if not lignes:
-        attention("Aucun extrait web exploitable trouvé.")
-        return ""
+    if not textes_scrapes:
+        return "Aucun contenu web extrait."
 
-    ok(f"{len(lignes)} extraits web récupérés.")
-    return "\n".join(f"• {l}" for l in lignes)
+    ok("Pages web analysées avec succès.")
+    return "\n\n".join(textes_scrapes)
 
 
 def chercher(sujet):
-    """
-    Lance la recherche complète sur un sujet.
-
-    Étapes :
-      1. Scraping web pour du contexte réel et récent
-      2. Le cerveau synthétise le sujet + le contexte web
-
-    Argument : sujet (str)
-    Renvoie  : les données collectées (str)
-    """
     agent("Chercheur", "Explorer le sujet + recherche web réelle")
-
-    # --- 1. Récupérer du contexte web ---
     contexte_web = chercher_web(sujet)
 
-    # --- 2. Construire le prompt ---
-    if contexte_web:
-        prompt = f"""Voici le sujet de recherche à explorer :
+    prompt = f"""Sujet de recherche : {sujet}
 
-━━━ {sujet} ━━━
-
-Pour t'aider, voici des extraits trouvés sur le web (contexte réel) :
-
+Voici des extraits récents récupérés sur le web (DuckDuckGo + Scraping) :
 {contexte_web}
 
-Ta mission :
-1. Décompose ce sujet en 4 à 6 sous-questions essentielles.
-2. Pour chacune, rédige une réponse détaillée (faits, chiffres, exemples).
-3. Si le sujet implique des évolutions, donne les tendances actuelles.
-4. Termine par « Points clés » listant les 5 découvertes majeures.
+À partir de tes propres connaissances ET de ces extraits web,
+rédige un dossier de recherche complet sur le sujet.
+Ignore les menus et textes techniques parasites du web (ex: 'accepter les cookies')."""
 
-Format Markdown avec un titre ## par sous-question."""
-    else:
-        prompt = f"""Voici le sujet de recherche à explorer :
-
-━━━ {sujet} ━━━
-
-Ta mission :
-1. Décompose ce sujet en 4 à 6 sous-questions essentielles.
-2. Pour chacune, rédige une réponse détaillée (faits, chiffres, exemples).
-3. Termine par « Points clés » listant les 5 découvertes majeures.
-
-Format Markdown avec un titre ## par sous-question."""
-
-    resultat = appeler_llm(SYSTEME, prompt, temperature=0.4)
-
-    nb_mots = len(resultat.split())
-    ok(f"Recherche terminée — {nb_mots} mots collectés.")
+    resultat = appeler_llm(SYSTEME, prompt, temperature=0.3)
+    ok("Recherche terminée — dossier compilé.")
     return resultat

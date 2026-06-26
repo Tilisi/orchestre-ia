@@ -51,5 +51,18 @@ N'utilise PAS de délimiteur de code (``` ) au début ou à la fin."""
     resultat = appeler_llm(SYSTEME, prompt, temperature=0.7)
 
     nb_mots = len(resultat.split())
-    ok(f"Rapport rédigé — {nb_mots} mots.")
+    ok(f"Rapport initial rédigé — {nb_mots} mots.")
+    return resultat
+
+def corriger(rapport, feedback):
+    """
+    Applique les corrections demandées par le critique.
+    """
+    agent("Rédacteur", "Corriger le rapport selon les retours du critique")
+
+    prompt = f"""Voici le rapport initial :\n{rapport}\n\nVoici les retours du critique :\n{feedback}\n\nTa mission :\nRéécris la VERSION FINALE de ce rapport en appliquant strictement ces corrections.\nAméliore ce qui a été pointé du doigt.\nGarde le format Markdown clair et aéré. Ne mets pas de commentaires, donne juste le texte final."""
+
+    resultat = appeler_llm(SYSTEME, prompt, temperature=0.5)
+    nb_mots = len(resultat.split())
+    ok(f"Rapport final corrigé — {nb_mots} mots.")
     return resultat

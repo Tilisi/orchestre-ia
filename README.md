@@ -178,11 +178,12 @@ orchestre-ia/
 
 ## V1 — Bash pur (Termux)
 
-La V1 reste disponible et fonctionnelle. Idéale pour apprendre les bases du multi-agent en bash.
+La V1 reste disponible et fonctionnelle dans le dossier `v1_legacy/`. Idéale pour apprendre les bases du multi-agent en bash.
 
 ```bash
+cd v1_legacy
 bash install.sh              # installation
-nano .env                    # ajouter GROQ_API_KEY
+nano ../.env                 # ajouter GROQ_API_KEY
 ./orchestrateur.sh "ton sujet"
 ```
 

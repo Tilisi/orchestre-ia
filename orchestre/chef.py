@@ -27,23 +27,26 @@ def _pipeline_recherche(tache):
     donnees = chercheur.chercher(tache)
     analyse = analyseur.analyser(donnees)
     rapport = redacteur.rediger(analyse, tache)
-    rapport = critique.critiquer(rapport, tache)  # 🔬 6e agent
-    return rapport
+    feedback = critique.critiquer(rapport, tache)  # 🔬 Le critique donne ses retours
+    rapport_final = redacteur.corriger(rapport, feedback) # Le rédacteur corrige
+    return rapport_final
 
 
 def _pipeline_data(tache):
     """Pipeline pour une analyse de données."""
     analyse = data_agent.analyser(tache)
     rapport = redacteur.rediger(analyse, "Analyse de données")
-    rapport = critique.critiquer(rapport, "Analyse de données")  # 🔬
-    return rapport
+    feedback = critique.critiquer(rapport, "Analyse de données")  # 🔬
+    rapport_final = redacteur.corriger(rapport, feedback)
+    return rapport_final
 
 
 def _pipeline_contenu(tache):
     """Pipeline pour la création de contenu."""
     rapport = redacteur.rediger(tache, tache)
-    rapport = critique.critiquer(rapport, tache)  # 🔬
-    return rapport
+    feedback = critique.critiquer(rapport, tache)  # 🔬
+    rapport_final = redacteur.corriger(rapport, feedback)
+    return rapport_final
 
 
 def _pipeline_code(tache):

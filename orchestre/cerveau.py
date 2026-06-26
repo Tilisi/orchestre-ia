@@ -22,7 +22,7 @@ import requests
 from orchestre.log import info, ok, erreur
 
 # Délai maximum pour un appel API (en secondes)
-_TIMEOUT = 120
+_TIMEOUT = 45
 
 
 # ════════════════════════════════════════════════════════
@@ -64,9 +64,22 @@ def _gemini(systeme, utilisateur, temperature):
     )
     reponse.raise_for_status()
     data = reponse.json()
-    if "candidates" not in data:
+    
+    if "candidates" not in data or not data["candidates"]:
+        # Gemini Safety Filter block or generic error
+        prompt_feedback = data.get("promptFeedback", {})
+        if prompt_feedback.get("blockReason"):
+            raise RuntimeError(f"Censuré par Gemini (Safety Filter) : {prompt_feedback['blockReason']}")
         raise RuntimeError(f"Réponse Gemini inattendue : {data}")
-    return data["candidates"][0]["content"]["parts"][0]["text"]
+        
+    candidat = data["candidates"][0]
+    if candidat.get("finishReason") == "SAFETY":
+        raise RuntimeError("Gemini a bloqué la réponse en cours (Safety Filter).")
+        
+    try:
+        return candidat["content"]["parts"][0]["text"]
+    except KeyError:
+        raise RuntimeError(f"Format Gemini inattendu : {candidat}")
 
 
 def _openrouter(systeme, utilisateur, temperature):

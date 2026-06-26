@@ -16,25 +16,13 @@ Ce module peut être appelé :
 import sys
 import os
 import argparse
-
+from dotenv import load_dotenv
 
 def _charger_env():
-    """Charge le fichier .env manuellement (sans python-dotenv)."""
+    """Charge le fichier .env proprement."""
     chemin_env = os.path.join(os.getcwd(), ".env")
-    if not os.path.exists(chemin_env):
-        return
-    with open(chemin_env, encoding="utf-8") as f:
-        for ligne in f:
-            ligne = ligne.strip()
-            if not ligne or ligne.startswith("#"):
-                continue
-            if "=" in ligne:
-                cle, _, valeur = ligne.partition("=")
-                cle = cle.strip()
-                valeur = valeur.strip().strip('"').strip("'")
-                # Ne pas écraser une variable déjà définie (ex: GitHub Secrets)
-                if cle and cle not in os.environ:
-                    os.environ[cle] = valeur
+    if os.path.exists(chemin_env):
+        load_dotenv(chemin_env)
 
 
 # Charger les variables d'environnement du fichier .env

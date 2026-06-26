@@ -43,26 +43,13 @@ if _PROJET not in sys.path:
     sys.path.insert(0, _PROJET)
 
 # --- Charger le .env manuellement (sans dépendance python-dotenv) ---
-_GUILLEMETS = ('"', "'")  # tuple de caractères guillemets
-
+import os
+from dotenv import load_dotenv
 
 def _charger_env(chemin):
-    if not os.path.exists(chemin):
-        return
-    with open(chemin, encoding="utf-8") as f:
-        for ligne in f:
-            ligne = ligne.strip()
-            if not ligne or ligne.startswith("#") or "=" not in ligne:
-                continue
-            cle, _, val = ligne.partition("=")
-            cle = cle.strip()
-            val = val.strip()
-            # Retirer les guillemets entourant la valeur
-            if len(val) >= 2 and val[0] == val[-1] and val[0] in _GUILLEMETS:
-                val = val[1:-1]
-            if cle and cle not in os.environ:
-                os.environ[cle] = val
-
+    """Charge le fichier .env proprement via python-dotenv."""
+    if os.path.exists(chemin):
+        load_dotenv(chemin)
 
 _charger_env(os.path.join(_PROJET, ".env"))
 
@@ -187,6 +174,8 @@ def cmd_mode(message):
                           "Change-le via BOT_MODE dans .env (cloud ou local)".format(MODE))
 
 
+import threading
+
 @bot.message_handler(func=lambda m: True)
 def traiter_tache(message):
     """Traite n'importe quel message comme une tâche."""
@@ -199,16 +188,25 @@ def traiter_tache(message):
         return
 
     info("Tâche reçue de {} : {}...".format(message.chat.id, sujet[:60]))
-    bot.reply_to(message, "🔄 Je traite : « {}... »\nMode : {}".format(sujet[:60], MODE))
 
     if MODE == "cloud":
+        bot.reply_to(message, "🔄 Je traite dans le cloud : « {}... »\nMode : {}".format(sujet[:60], MODE))
         succes, reponse = _declencher_github(sujet)
+        _envoyer(message.chat.id, reponse)
+        if succes:
+            ok("Tâche traitée avec succès.")
     else:
-        succes, reponse = _executer_local(sujet)
+        def _thread_local(chat_id, task_sujet):
+            try:
+                succes, reponse = _executer_local(task_sujet)
+                _envoyer(chat_id, reponse)
+                if succes:
+                    ok("Tâche locale traitée avec succès.")
+            except Exception as e:
+                _envoyer(chat_id, f"❌ Erreur lors du thread local : {e}")
 
-    _envoyer(message.chat.id, reponse)
-    if succes:
-        ok("Tâche traitée avec succès.")
+        bot.reply_to(message, "🔄 Je traite en local (thread asynchrone) : « {}... »\nMode : {}".format(sujet[:60], MODE))
+        threading.Thread(target=_thread_local, args=(message.chat.id, sujet), daemon=True).start()
 
 
 # ════════════════════════════════════════════════════════
