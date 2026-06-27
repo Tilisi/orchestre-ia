@@ -1,9 +1,13 @@
 """
 🔍 AGENT CHERCHEUR  (avec vrai scraping web)
 ============================================
-Explore un sujet, récupère du vrai contenu sur le web via
-DuckDuckGo, scrape réellement les pages trouvées, puis synthétise le tout avec le cerveau IA.
+Explore un sujet, récupère du vrai contenu sur le web via DuckDuckGo,
+scrape les pages trouvées, puis synthétise avec le cerveau IA.
 """
+
+from __future__ import annotations
+
+from urllib.parse import parse_qs, unquote, urlparse
 
 import requests
 from bs4 import BeautifulSoup
@@ -30,10 +34,62 @@ _HEADERS = {
 }
 
 
+def _normaliser_url_duckduckgo(href: str) -> str:
+    """Convertit les redirections DuckDuckGo en URL cible quand possible."""
+    if not href:
+        return ""
+    href = href.strip()
+    if href.startswith("//"):
+        href = "https:" + href
+
+    parsed = urlparse(href)
+    query = parse_qs(parsed.query)
+    if "uddg" in query and query["uddg"]:
+        return unquote(query["uddg"][0])
+    return href
+
+
+def _extraire_liens_duckduckgo(html: str, limite: int = 5) -> list[str]:
+    """
+    Extrait les liens de résultats DuckDuckGo de manière plus robuste que
+    la dépendance à une seule classe CSS.
+    """
+    soupe = BeautifulSoup(html, "html.parser")
+    liens: list[str] = []
+
+    for a in soupe.find_all("a"):
+        classes = set(a.get("class") or [])
+        href = _normaliser_url_duckduckgo(a.get("href", ""))
+        if not href.startswith("http"):
+            continue
+        host = urlparse(href).netloc.lower()
+        if "duckduckgo.com" in host:
+            continue
+
+        est_resultat = bool(classes & {"result__a", "result__url"})
+        # Fallback : garder aussi les liens externes présents dans la zone de résultats.
+        parent_text = " ".join(a.get_text(" ", strip=True).split())
+        if est_resultat or parent_text:
+            if href not in liens:
+                liens.append(href)
+        if len(liens) >= limite:
+            break
+    return liens
+
+
+def _nettoyer_html(html: str, limite: int = 3000) -> str:
+    """Extrait un texte propre d'une page HTML."""
+    soupe = BeautifulSoup(html, "html.parser")
+    for elem in soupe(["script", "style", "nav", "footer", "header", "noscript"]):
+        elem.extract()
+    lignes = [ligne.strip() for ligne in soupe.get_text(separator="\n").splitlines() if ligne.strip()]
+    return "\n".join(lignes)[:limite]
+
+
 def chercher_web(requete, max_extraits=5):
     """
-    Effectue une recherche web sur DuckDuckGo, extrait les vrais liens,
-    et scrape le contenu de ces pages.
+    Effectue une recherche web sur DuckDuckGo, extrait les liens,
+    et scrape le contenu des premières pages.
     """
     info(f"Recherche web : « {requete} »")
     try:
@@ -45,44 +101,22 @@ def chercher_web(requete, max_extraits=5):
         attention(f"Recherche web (DuckDuckGo) impossible ({e}). On continue sans web.")
         return ""
 
-    soupe = BeautifulSoup(reponse.text, "html.parser")
-    liens = []
-
-    # Extraire les URL réelles des résultats
-    for a in soupe.find_all("a", class_="result__url"):
-        href = a.get("href", "")
-        if href.startswith("http") and "duckduckgo" not in href:
-            if href not in liens:
-                liens.append(href)
-
+    liens = _extraire_liens_duckduckgo(reponse.text, limite=max_extraits)
     if not liens:
         attention("Aucun lien exploitable trouvé. Extraction de fallback.")
-        texte = soupe.get_text(separator="\n")
-        return texte[:2000]
+        return _nettoyer_html(reponse.text, limite=2000)
 
-    ok(f"{len(liens)} liens web trouvés. Scraping des 2 premiers...")
+    nb_pages = min(2, len(liens))
+    ok(f"{len(liens)} liens web trouvés. Scraping des {nb_pages} premiers...")
     textes_scrapes = []
 
-    # Scraper les 2 premières URLs
-    for lien in liens[:2]:
+    for lien in liens[:nb_pages]:
         try:
             r = requests.get(lien, headers=_HEADERS, timeout=10)
-            if r.status_code == 200:
-                s = BeautifulSoup(r.text, "html.parser")
-                # Supprimer les balises inutiles
-                for elem in s(["script", "style", "nav", "footer", "header"]):
-                    elem.extract()
-                texte_propre = s.get_text(separator="\n")
-                # Nettoyer les espaces multiples
-                lignes = [
-                    ligne.strip()
-                    for ligne in texte_propre.splitlines()
-                    if ligne.strip()
-                ]
-                texte_final = "\n".join(lignes)
-
-                # Garder 3000 caractères par page pour éviter la saturation du contexte
-                textes_scrapes.append(f"--- SOURCE : {lien} ---\n{texte_final[:3000]}")
+            r.raise_for_status()
+            texte_final = _nettoyer_html(r.text, limite=3000)
+            if texte_final:
+                textes_scrapes.append(f"--- SOURCE : {lien} ---\n{texte_final}")
         except Exception as e:
             attention(f"Impossible de lire {lien} ({e})")
             continue

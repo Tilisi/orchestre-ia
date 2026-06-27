@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-🚀 POINk D'ENTRÉE CLOUD — Bot Telegram + Keep-alive
+🚀 POINT D'ENTRÉE CLOUD — Bot Telegram + Keep-alive
 ====================================================
 Lance EN MÊME TEMPS :
   1. Le serveur web keep-alive (empêche Render d'endormir)
@@ -24,19 +24,11 @@ _PROJET = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PROJET not in sys.path:
     sys.path.insert(0, _PROJET)
 
-# Charger le .env manuellement si présent (en local)
-_ENV = os.path.join(_PROJET, ".env")
-if os.path.exists(_ENV):
-    with open(_ENV, encoding="utf-8") as f:
-        for ligne in f:
-            ligne = ligne.strip()
-            if ligne and not ligne.startswith("#") and "=" in ligne:
-                k, _, v = ligne.partition("=")
-                k = k.strip()
-                v = v.strip()
-                if len(v) >= 2 and v[0] == v[-1] and v[0] in ('"', "'"):
-                    v = v[1:-1]
-                os.environ.setdefault(k, v)
+# Charger le .env si présent, sans dépendance obligatoire à python-dotenv.
+from orchestre.env import load_env
+
+
+load_env(os.path.join(_PROJET, ".env"))
 
 import telebot
 from orchestre.log import info, ok, erreur
@@ -50,6 +42,12 @@ PORT = int(os.getenv("PORT", "10000"))
 if not TOKEN:
     print("ERREUR: TELEGRAM_BOT_TOKEN manquant")
     sys.exit(1)
+
+if not CHAT_ID_AUTORISE:
+    print(
+        "ATTENTION: TELEGRAM_CHAT_ID non configuré. "
+        "Le bot acceptera tous les utilisateurs qui connaissent son token."
+    )
 
 bot = telebot.TeleBot(TOKEN)
 

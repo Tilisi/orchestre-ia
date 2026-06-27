@@ -119,11 +119,12 @@ orchestre-ia/
 ├── requirements.txt           ← dépendances Python
 │
 ├── # ═══ V1 : Bash pur (Termux) ═══
-├── orchestrateur.sh          ← chef d'orchestre V1
-├── config.sh / install.sh
-├── lib/{utils.sh, llm.sh}
-├── agents/{chercheur.sh, analyseur.sh, redacteur.sh}
-├── skills/recherche_web.sh
+├── v1_legacy/
+│   ├── orchestrateur.sh      ← chef d'orchestre V1
+│   ├── config.sh / install.sh
+│   ├── lib/{utils.sh, llm.sh}
+│   ├── agents/{chercheur.sh, analyseur.sh, redacteur.sh}
+│   └── skills/recherche_web.sh
 │
 ├── docs/
 │   ├── INSTALL.md             ← guide V1 (Termux)

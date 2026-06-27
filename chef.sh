@@ -36,8 +36,9 @@ if ! command -v python3 &>/dev/null; then
     exit 1
 fi
 
-# --- Vérifier les dépendances (requests, bs4) ---
-if ! python3 -c "import requests, bs4" 2>/dev/null; then
+# --- Vérifier les dépendances nécessaires au CLI local ---
+# requests + bs4 : recherche web ; dotenv : chargement .env si disponible.
+if ! python3 -c "import requests, bs4, dotenv" 2>/dev/null; then
     echo "⚠️  Dépendances Python manquantes. Installation..."
     pip install -r "$ORCHESTRE_ROOT/requirements.txt" || {
         echo "❌ Échec de l'installation. Lance :  pip install -r requirements.txt"

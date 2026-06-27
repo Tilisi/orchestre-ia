@@ -14,26 +14,13 @@ Ce module peut être appelé :
 """
 
 import sys
-import os
 import argparse
-from dotenv import load_dotenv
+
+from orchestre.env import load_env
 
 
-def _charger_env():
-    """Charge le fichier .env proprement."""
-    chemin_env = os.path.join(os.getcwd(), ".env")
-    if os.path.exists(chemin_env):
-        load_dotenv(chemin_env)
-
-
-# Charger les variables d'environnement du fichier .env
-# (avec python-dotenv si dispo, sinon manuellement)
-try:
-    from dotenv import load_dotenv
-
-    load_dotenv()
-except ImportError:
-    _charger_env()
+# Charger les variables d'environnement sans rendre python-dotenv obligatoire.
+load_env()
 
 
 def main():

@@ -42,18 +42,11 @@ _PROJET = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _PROJET not in sys.path:
     sys.path.insert(0, _PROJET)
 
-# --- Charger le .env manuellement (sans dépendance python-dotenv) ---
-import os
-from dotenv import load_dotenv
+# --- Charger le .env sans rendre python-dotenv obligatoire ---
+from orchestre.env import load_env
 
 
-def _charger_env(chemin):
-    """Charge le fichier .env proprement via python-dotenv."""
-    if os.path.exists(chemin):
-        load_dotenv(chemin)
-
-
-_charger_env(os.path.join(_PROJET, ".env"))
+load_env(os.path.join(_PROJET, ".env"))
 
 # --- Importer telebot ---
 try:
@@ -72,6 +65,12 @@ MODE = os.getenv("BOT_MODE", "cloud").lower()
 if not TOKEN:
     print("TELEGRAM_BOT_TOKEN manquant dans .env")
     sys.exit(1)
+
+if not CHAT_ID_AUTORISE:
+    print(
+        "ATTENTION: TELEGRAM_CHAT_ID non configuré. "
+        "Le bot acceptera tous les utilisateurs qui connaissent son token."
+    )
 
 bot = telebot.TeleBot(TOKEN)
 

@@ -18,6 +18,7 @@ output/*
 
 # 📁 Dossiers de cache et fichiers générés
 .cache/
+.pytest_cache/
 __pycache__/
 *.pyc
 .venv/
